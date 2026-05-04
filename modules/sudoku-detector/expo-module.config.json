@@ -1,0 +1,9 @@
+{
+  "platforms": ["ios", "android"],
+  "ios": {
+    "modules": ["SudokuDetectorModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.sudokudetector.SudokuDetectorModule"]
+  }
+}

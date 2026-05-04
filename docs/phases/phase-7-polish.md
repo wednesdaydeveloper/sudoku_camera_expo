@@ -34,20 +34,42 @@
 
 ## 設計判断
 
-実装時に追記。
+- **双線形補間でパース補正を近似**: 透視変換ライブラリを追加せず、4隅からの双線形補間でセル座標を算出。精度改善の主因は「中間クロップなしに元画像から直接切り出す」ことで、行ズレ・列ズレを解消。ADR-008 参照。
+- **写真ライブラリ権限**: `getMediaLibraryPermissionsAsync` で事前確認 → `canAskAgain` 分岐で `requestMediaLibraryPermissionsAsync` または `Linking.openSettings()` 誘導。
 
 ## 実装内容
 
-実装後に追記。
+### A: OCR 精度改善（双線形補間）
+
+- `src/ocr/segment.ts` に `computeCellRectFromCorners` / `segmentBoardFromCorners` を追加
+  - 4隅 (Corners) と imageSize から双線形補間でセル座標を算出
+  - 元画像に直接 81 回クロップ（中間 bounding rect 画像を経由しない）
+- `src/ocr/index.ts` に新関数をエクスポート追加
+- `src/screens/CornerPickerScreen.tsx` の `onConfirm` コールバックを `(corners: Corners, naturalSize: ImageSize)` に変更（`onCropped` は廃止）
+- `App.tsx` の OCR パイプラインを `segmentBoardFromCorners` へ切り替え、`croppedPreview` 画面を廃止。`cornerPicker` 画面から直接 `processing` へ遷移し、`corners` / `naturalSize` / `originalImageUri` を引数として渡す
+
+### B: 写真ライブラリ権限エラーハンドリング
+
+- `App.tsx` の `handlePickPhoto` に `getMediaLibraryPermissionsAsync` による事前チェックを追加
+  - `canAskAgain` が true → `requestMediaLibraryPermissionsAsync` でシステムダイアログ
+  - 永続拒否済み → Alert + 「設定を開く」ボタン（`Linking.openSettings()`）
+
+### C: README.md
+
+- プロジェクトルートに `README.md` を作成（概要・使い方・セットアップ・アーキテクチャ・技術スタック）
 
 ## 動作確認
 
-実装後に追記。実機の機種・OSバージョン、テストした問題画像、レイテンシ等を記録。
+- `npm test`: 35件グリーン（Phase 7 で `computeCellRectFromCorners` の 6 ケースを追加）
+- `npx tsc --noEmit`: エラーなし
 
 ## 次Phaseへの引き継ぎ
 
-完了時に追記（v1.1 への持ち越し事項）。
+- iOS・Android実機テストは未実施（エミュレータ確認のみ）
+- OCR精度の定量評価（5枚以上のサンプル画像）は未実施
+- Apple Vision Framework による代替 OCR は未検討
+- アイコン・スプラッシュのカスタマイズは未対応
 
 ## ステータス
 
-⚪ 未着手
+🟡 進行中（実機テスト・定量評価は持ち越し）
