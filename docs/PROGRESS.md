@@ -16,6 +16,12 @@
 
 凡例: ✅ 完了 / 🟡 進行中 / ⚪ 未着手 / ⛔ 中断
 
+## 横断ドキュメント
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — システム全体図とモジュール責務
+- [UI-DESIGN.md](UI-DESIGN.md) — 画面遷移図・レイアウト案・デザイントークン
+- [DECISIONS.md](DECISIONS.md) — ADRログ
+
 ## Phase 1: プロジェクト基盤 ✅
 
 - [x] Expo SDK 54 + TypeScript スケルトン生成

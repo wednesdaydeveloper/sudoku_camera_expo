@@ -38,6 +38,7 @@
 ├── docs/                # プロジェクトドキュメント
 │   ├── PROGRESS.md      # 全Phaseの進捗
 │   ├── ARCHITECTURE.md  # アーキテクチャ概要
+│   ├── UI-DESIGN.md     # 画面遷移・レイアウト・デザイントークン
 │   ├── DECISIONS.md     # 設計判断ログ（ADR）
 │   └── phases/          # Phaseごとの詳細
 └── assets/              # 画像・アイコン
@@ -93,3 +94,4 @@
 ## 更新履歴
 
 - 2026-05-04: 初版作成（Phase 1 完了時点）
+- 2026-05-04: `docs/UI-DESIGN.md` 追加（画面遷移・レイアウト案・デザイントークン）
