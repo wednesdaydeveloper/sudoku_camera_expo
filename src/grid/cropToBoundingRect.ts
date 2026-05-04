@@ -1,4 +1,4 @@
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { BoundingRect, Corners, ImageSize } from './types';
 
 export interface CropResult {
@@ -45,10 +45,7 @@ export async function cropToBoundingRect(
   if (rect.width <= 0 || rect.height <= 0) {
     throw new Error('クロップ範囲が不正です');
   }
-  const result = await manipulateAsync(
-    imageUri,
-    [{ crop: rect }],
-    { compress: 1, format: SaveFormat.JPEG }
-  );
+  const ref = await ImageManipulator.manipulate(imageUri).crop(rect).renderAsync();
+  const result = await ref.saveAsync({ compress: 1, format: SaveFormat.JPEG });
   return { uri: result.uri, width: result.width, height: result.height };
 }
