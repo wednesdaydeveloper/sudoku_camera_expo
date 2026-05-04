@@ -1,13 +1,13 @@
 # 開発進捗
 
-最終更新: 2026-05-04
+最終更新: 2026-05-04（Phase 2 完了）
 
 ## サマリ
 
 | Phase | 内容 | ステータス | 詳細 |
 |-------|------|-----------|------|
 | 1 | プロジェクト基盤 | ✅ 完了 | [phase-1-setup.md](phases/phase-1-setup.md) |
-| 2 | 数独ソルバ（純ロジック） | ⚪ 未着手 | [phase-2-solver.md](phases/phase-2-solver.md) |
+| 2 | 数独ソルバ（純ロジック） | ✅ 完了 | [phase-2-solver.md](phases/phase-2-solver.md) |
 | 3 | カメラ／画像取得画面 | ⚪ 未着手 | [phase-3-camera.md](phases/phase-3-camera.md) |
 | 4 | 盤面検出（手動4点指定） | ⚪ 未着手 | [phase-4-grid-detect.md](phases/phase-4-grid-detect.md) |
 | 5 | セル分割＋数字OCR | ⚪ 未着手 | [phase-5-ocr.md](phases/phase-5-ocr.md) |
@@ -32,15 +32,15 @@
 - [x] `npx tsc --noEmit` グリーン
 - [x] Gitコミット（`f8bf2a1`）
 
-## Phase 2: 数独ソルバ ⚪
+## Phase 2: 数独ソルバ ✅
 
-- [ ] `src/solver/types.ts`: Board / Cell 型定義
-- [ ] `src/solver/validate.ts`: 入力盤面の妥当性検証
-- [ ] `src/solver/solve.ts`: バックトラック+制約伝播
-- [ ] `__tests__/solver.test.ts`: easy/medium/hard 各1問以上で正答確認
-- [ ] 解けない問題に対する適切な戻り値
-- [ ] `npm test` グリーン
-- [ ] Gitコミット
+- [x] `src/solver/types.ts`: Board / Cell / SolveResult 型定義
+- [x] `src/solver/validate.ts`: 入力盤面の妥当性検証
+- [x] `src/solver/solve.ts`: MRV ヒューリスティック + ビットマスクのバックトラック
+- [x] `__tests__/solver.test.ts`: easy / medium / hard / 完成済み / 空 / unsolvable / invalid（13ケース）
+- [x] 解けない問題に対する `invalid` / `unsolvable` 戻り値
+- [x] `npm test` グリーン
+- [x] Gitコミット
 
 ## Phase 3: カメラ／画像取得画面 ⚪
 
