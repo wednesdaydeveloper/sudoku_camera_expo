@@ -1,6 +1,6 @@
 # 開発進捗
 
-最終更新: 2026-05-04（Phase 2 完了）
+最終更新: 2026-05-04（Phase 3 実装完了・実機検証はユーザー側）
 
 ## サマリ
 
@@ -8,7 +8,7 @@
 |-------|------|-----------|------|
 | 1 | プロジェクト基盤 | ✅ 完了 | [phase-1-setup.md](phases/phase-1-setup.md) |
 | 2 | 数独ソルバ（純ロジック） | ✅ 完了 | [phase-2-solver.md](phases/phase-2-solver.md) |
-| 3 | カメラ／画像取得画面 | ⚪ 未着手 | [phase-3-camera.md](phases/phase-3-camera.md) |
+| 3 | カメラ／画像取得画面 | 🟡 実装完了/実機検証中 | [phase-3-camera.md](phases/phase-3-camera.md) |
 | 4 | 盤面検出（手動4点指定） | ⚪ 未着手 | [phase-4-grid-detect.md](phases/phase-4-grid-detect.md) |
 | 5 | セル分割＋数字OCR | ⚪ 未着手 | [phase-5-ocr.md](phases/phase-5-ocr.md) |
 | 6 | 結果画面と手動修正UI | ⚪ 未着手 | [phase-6-result-ui.md](phases/phase-6-result-ui.md) |
@@ -42,15 +42,20 @@
 - [x] `npm test` グリーン
 - [x] Gitコミット
 
-## Phase 3: カメラ／画像取得画面 ⚪
+## Phase 3: カメラ／画像取得画面 🟡
 
-- [ ] `src/screens/CameraScreen.tsx` 実装
-- [ ] パーミッション要求 + 拒否時UI
-- [ ] expo-camera で撮影 / expo-image-picker でライブラリ選択
-- [ ] 撮影プレビュー → 「解析する」ボタン
-- [ ] App.tsx の状態ベース画面遷移を組み込み
-- [ ] 実機 or シミュレータで動作確認
-- [ ] Gitコミット
+- [x] `src/screens/HomeScreen.tsx` 実装（案B レイアウト）
+- [x] `src/screens/CameraScreen.tsx` 実装
+- [x] `src/screens/ImagePreviewScreen.tsx` 実装
+- [x] `src/theme/tokens.ts` でデザイントークン定義
+- [x] パーミッション要求 + 拒否時UI（CameraScreen にインライン）
+- [x] expo-camera で撮影 / expo-image-picker でライブラリ選択
+- [x] App.tsx の状態ベース画面遷移を組み込み
+- [x] `npx tsc --noEmit` グリーン / 既存テスト 13件グリーン
+- [ ] 実機 or シミュレータで動作確認 ← **ユーザー実施項目**
+- [ ] Gitコミット ← 承認待ち
+- [ ] Push ← 承認待ち
+- [ ] PR 作成 ← 承認待ち
 
 ## Phase 4: 盤面検出（手動4点指定） ⚪
 
