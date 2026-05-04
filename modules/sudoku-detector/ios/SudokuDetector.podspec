@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.authors        = { 'wednesdaydeveloper' => 'sigaokamoto@gmail.com' }
   s.homepage       = 'https://github.com/wednesdaydeveloper/sudoku_camera_expo'
   s.platforms      = { :ios => '15.5' }
-  s.source         = { git: '' }
+  s.source         = { git: 'https://github.com/wednesdaydeveloper/sudoku_camera_expo.git', tag: s.version.to_s }
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'

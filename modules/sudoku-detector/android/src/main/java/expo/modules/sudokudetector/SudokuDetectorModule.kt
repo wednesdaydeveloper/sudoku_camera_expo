@@ -1,11 +1,9 @@
 package expo.modules.sudokudetector
 
 import android.graphics.BitmapFactory
-import android.net.Uri
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.Promise
-import java.io.File
 
 class SudokuDetectorModule : Module() {
   override fun definition() = ModuleDefinition {

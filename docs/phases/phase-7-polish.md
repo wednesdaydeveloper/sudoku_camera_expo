@@ -45,8 +45,8 @@
   - 4隅 (Corners) と imageSize から双線形補間でセル座標を算出
   - 元画像に直接 81 回クロップ（中間 bounding rect 画像を経由しない）
 - `src/ocr/index.ts` に新関数をエクスポート追加
-- `src/screens/CornerPickerScreen.tsx` の `onCropped` コールバックを `(result, imageCorners, naturalSize)` に変更
-- `App.tsx` の OCR パイプラインを `segmentBoardFromCorners` へ切り替え、`croppedPreview` 状態に `corners` / `naturalSize` / `originalImageUri` を保持
+- `src/screens/CornerPickerScreen.tsx` の `onConfirm` コールバックを `(corners: Corners, naturalSize: ImageSize)` に変更（`onCropped` は廃止）
+- `App.tsx` の OCR パイプラインを `segmentBoardFromCorners` へ切り替え、`croppedPreview` 画面を廃止。`cornerPicker` 画面から直接 `processing` へ遷移し、`corners` / `naturalSize` / `originalImageUri` を引数として渡す
 
 ### B: 写真ライブラリ権限エラーハンドリング
 

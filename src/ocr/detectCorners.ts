@@ -2,11 +2,11 @@ import { SudokuDetector } from 'sudoku-detector';
 import type { Corners } from '../grid/types';
 import type { ImageSize } from './types';
 
-/** confidence がこの値以上ならネイティブ検出を採用する（低信頼度でもフォールバックより有用） */
+/** confidence がこの値以上ならネイティブ検出を採用する */
 const NATIVE_CONFIDENCE_THRESHOLD = 0.1;
 
 function fallbackCorners(imageSize: ImageSize, expandRatio = 0): Corners {
-  // 5% インセットは画像端すぎて調整が難しいため 20% を基準にする
+  // 5% インセットは画像端すぎてユーザーの調整余白が取れないため 20% を基準にする
   const ix = imageSize.width * Math.max(0, 0.20 - expandRatio);
   const iy = imageSize.height * Math.max(0, 0.20 - expandRatio);
   return {

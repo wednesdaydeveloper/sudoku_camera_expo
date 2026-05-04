@@ -76,8 +76,9 @@ export function computeCellRectFromCorners(
   const insetX = w * safeInset;
   const insetY = h * safeInset;
 
-  const originX = Math.max(0, Math.floor(minX + insetX));
-  const originY = Math.max(0, Math.floor(minY + insetY));
+  // originX/Y は [0, imageSize - 1] に clamp して origin + size が画像外に出ないようにする
+  const originX = Math.min(imageSize.width - 1, Math.max(0, Math.floor(minX + insetX)));
+  const originY = Math.min(imageSize.height - 1, Math.max(0, Math.floor(minY + insetY)));
   const width = Math.max(
     1,
     Math.min(imageSize.width - originX, Math.floor(w - 2 * insetX))

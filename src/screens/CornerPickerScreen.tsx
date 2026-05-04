@@ -128,7 +128,9 @@ export function CornerPickerScreen({
       bottomLeft:  toImage(corners.bottomLeft),
     };
     onConfirm(imageCorners, naturalSize);
-    setProcessing(false);
+    // setProcessing(false) は不要: onConfirm により親がナビゲーションを実行し
+    // このコンポーネントはアンマウントされる。同期的にリセットすると
+    // React のバッチ処理により processing が true になる前に false に戻る。
   };
 
   return (
