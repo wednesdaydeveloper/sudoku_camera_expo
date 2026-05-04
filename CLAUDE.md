@@ -56,9 +56,10 @@
 - **Push / PR ワークフロー（Phase 3 以降）**:
   - Phase 開始時に feature branch を切る（例: `phase-3-camera`、`phase-4-grid-detect`）
   - Phase 内のコミットは feature branch 上に積む
-  - Phase 完了 → ローカルコミット完了 → **ユーザーに push 可否を確認** → 承認後に `git push -u origin <branch>`
-  - Push 完了 → **ユーザーに PR 作成可否を確認** → 承認後に `gh pr create`
-  - **承認なしに push / PR 作成を行わない**
+  - Phase 完了 → ローカルコミット完了 → **ユーザーに push 可否を確認**
+  - 承認後は **push と PR 作成を続けて実施**（1度の承認で両方）
+    - `git push -u origin <branch>` → そのまま `gh pr create`
+  - **承認なしに push を行わない**
   - PR タイトル: `Phase N: <要約>`（日本語）
   - PR 本文: 変更点の要約、テスト結果、関連ドキュメントへのリンク、スクリーンショット（UI を含む場合）。日本語で記述
   - マージ後（または PR レビュー反映後）に main を pull し、次 Phase の feature branch を main から切る
@@ -105,3 +106,4 @@
 - 2026-05-04: 初版作成（Phase 1 完了時点）
 - 2026-05-04: `docs/UI-DESIGN.md` 追加（画面遷移・レイアウト案・デザイントークン）
 - 2026-05-04: Push / PR ワークフローを追加（Phase 3 以降は feature branch 運用、push と PR 作成にユーザー承認を必須化）
+- 2026-05-04: Push 承認後に PR 作成も連続して実施するよう変更（承認は1回で両方カバー）

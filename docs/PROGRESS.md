@@ -1,6 +1,6 @@
 # 開発進捗
 
-最終更新: 2026-05-04（Phase 3 実装完了・実機検証はユーザー側）
+最終更新: 2026-05-04（Phase 4 実装完了・実機検証はユーザー側）
 
 ## サマリ
 
@@ -8,8 +8,8 @@
 |-------|------|-----------|------|
 | 1 | プロジェクト基盤 | ✅ 完了 | [phase-1-setup.md](phases/phase-1-setup.md) |
 | 2 | 数独ソルバ（純ロジック） | ✅ 完了 | [phase-2-solver.md](phases/phase-2-solver.md) |
-| 3 | カメラ／画像取得画面 | 🟡 実装完了/実機検証中 | [phase-3-camera.md](phases/phase-3-camera.md) |
-| 4 | 盤面検出（手動4点指定） | ⚪ 未着手 | [phase-4-grid-detect.md](phases/phase-4-grid-detect.md) |
+| 3 | カメラ／画像取得画面 | ✅ 完了 | [phase-3-camera.md](phases/phase-3-camera.md) |
+| 4 | 盤面検出（手動4点指定） | 🟡 実装完了/実機検証中 | [phase-4-grid-detect.md](phases/phase-4-grid-detect.md) |
 | 5 | セル分割＋数字OCR | ⚪ 未着手 | [phase-5-ocr.md](phases/phase-5-ocr.md) |
 | 6 | 結果画面と手動修正UI | ⚪ 未着手 | [phase-6-result-ui.md](phases/phase-6-result-ui.md) |
 | 7 | エラーハンドリング・実機テスト | ⚪ 未着手 | [phase-7-polish.md](phases/phase-7-polish.md) |
@@ -57,13 +57,19 @@
 - [ ] Push ← 承認待ち
 - [ ] PR 作成 ← 承認待ち
 
-## Phase 4: 盤面検出（手動4点指定） ⚪
+## Phase 4: 盤面検出（手動4点指定） 🟡
 
-- [ ] `src/grid/CornerPicker.tsx`: 画像上で4隅をドラッグ可能に
-- [ ] `src/grid/perspective.ts`: 4点 → 正方形への透視変換行列
-- [ ] expo-image-manipulator で補正画像生成
-- [ ] 補正後の見た目を確認できるプレビュー
-- [ ] Gitコミット
+- [x] `src/grid/types.ts`: Point / Corners / ImageSize / BoundingRect 型
+- [x] `src/grid/cropToBoundingRect.ts`: bounding rect 計算 + クロップ実行
+- [x] `src/screens/CornerPickerScreen.tsx`: 4ハンドル UI（PanResponder）
+- [x] `ImagePreviewScreen` を optional props 化して再利用
+- [x] App.tsx に cornerPicker / croppedPreview 遷移を追加
+- [x] `__tests__/grid.test.ts` 4ケース通過（合計17件）
+- [x] `npx tsc --noEmit` グリーン
+- [ ] 実機 or シミュレータで動作確認 ← **ユーザー実施項目**
+- [ ] Gitコミット ← 承認待ち
+- [ ] Push ← 承認待ち
+- [ ] PR 作成 ← 承認待ち
 
 ## Phase 5: セル分割＋数字OCR ⚪
 

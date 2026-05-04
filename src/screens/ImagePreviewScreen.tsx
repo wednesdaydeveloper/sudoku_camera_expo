@@ -5,9 +5,23 @@ interface ImagePreviewScreenProps {
   imageUri: string;
   onRetry: () => void;
   onProceed: () => void;
+  note?: string;
+  retryLabel?: string;
+  proceedLabel?: string;
 }
 
-export function ImagePreviewScreen({ imageUri, onRetry, onProceed }: ImagePreviewScreenProps) {
+const DEFAULT_NOTE = '解析できそうな状態か確認してください';
+const DEFAULT_RETRY_LABEL = '撮り直す';
+const DEFAULT_PROCEED_LABEL = '次へ →';
+
+export function ImagePreviewScreen({
+  imageUri,
+  onRetry,
+  onProceed,
+  note = DEFAULT_NOTE,
+  retryLabel = DEFAULT_RETRY_LABEL,
+  proceedLabel = DEFAULT_PROCEED_LABEL,
+}: ImagePreviewScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -25,7 +39,7 @@ export function ImagePreviewScreen({ imageUri, onRetry, onProceed }: ImagePrevie
         <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
       </View>
 
-      <Text style={styles.note}>解析できそうな状態か確認してください</Text>
+      <Text style={styles.note}>{note}</Text>
 
       <View style={styles.buttonRow}>
         <Pressable
@@ -33,14 +47,14 @@ export function ImagePreviewScreen({ imageUri, onRetry, onProceed }: ImagePrevie
           onPress={onRetry}
           accessibilityRole="button"
         >
-          <Text style={styles.secondaryButtonText}>撮り直す</Text>
+          <Text style={styles.secondaryButtonText}>{retryLabel}</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.button, styles.primaryButton, pressed && styles.pressed]}
           onPress={onProceed}
           accessibilityRole="button"
         >
-          <Text style={styles.primaryButtonText}>次へ →</Text>
+          <Text style={styles.primaryButtonText}>{proceedLabel}</Text>
         </Pressable>
       </View>
     </SafeAreaView>

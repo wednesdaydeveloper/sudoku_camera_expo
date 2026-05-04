@@ -5,11 +5,14 @@ import * as ImagePicker from 'expo-image-picker';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { CameraScreen } from './src/screens/CameraScreen';
 import { ImagePreviewScreen } from './src/screens/ImagePreviewScreen';
+import { CornerPickerScreen } from './src/screens/CornerPickerScreen';
 
 type Screen =
   | { name: 'home' }
   | { name: 'camera' }
-  | { name: 'preview'; imageUri: string };
+  | { name: 'preview'; imageUri: string }
+  | { name: 'cornerPicker'; imageUri: string }
+  | { name: 'croppedPreview'; imageUri: string };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
@@ -29,8 +32,11 @@ export default function App() {
     setScreen({ name: 'preview', imageUri: uri });
   };
 
-  const handleProceed = () => {
-    Alert.alert('Phase 4 で実装予定です', '次の画面で盤面の4隅を指定して画像を補正します。');
+  const handleProceedToOcr = () => {
+    Alert.alert(
+      'Phase 5 で実装予定です',
+      'セル分割と数字認識（OCR）を実行し、レビュー画面に進みます。'
+    );
   };
 
   return (
@@ -54,7 +60,30 @@ export default function App() {
         <ImagePreviewScreen
           imageUri={screen.imageUri}
           onRetry={() => setScreen({ name: 'home' })}
-          onProceed={handleProceed}
+          onProceed={() =>
+            setScreen({ name: 'cornerPicker', imageUri: screen.imageUri })
+          }
+        />
+      )}
+      {screen.name === 'cornerPicker' && (
+        <CornerPickerScreen
+          imageUri={screen.imageUri}
+          onCancel={() =>
+            setScreen({ name: 'preview', imageUri: screen.imageUri })
+          }
+          onCropped={(result) =>
+            setScreen({ name: 'croppedPreview', imageUri: result.uri })
+          }
+        />
+      )}
+      {screen.name === 'croppedPreview' && (
+        <ImagePreviewScreen
+          imageUri={screen.imageUri}
+          onRetry={() => setScreen({ name: 'home' })}
+          onProceed={handleProceedToOcr}
+          note="補正後の盤面です。OCR で数字を読み取ります。"
+          retryLabel="やり直す"
+          proceedLabel="OCR を実行 →"
         />
       )}
     </>
