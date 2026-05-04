@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local-only test images (sudoku samples for OCR verification)
+/samples/

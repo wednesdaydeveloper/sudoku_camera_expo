@@ -90,7 +90,8 @@
 
 ## 既知の制約・注意点
 
-- **Expo Go では動作しない予定**: Phase 5 の ML Kit 系ネイティブモジュール導入時点で Development Build 必須。
+- **Expo Go では動作しない**: Phase 5 で ML Kit 系ネイティブモジュールを導入したため、以降は Development Build 必須。
+- **iOS deployment target は 15.5**: `@react-native-ml-kit/text-recognition` の要求により、`expo-build-properties` で iOS 最小バージョンを 15.5 に設定。Expo SDK 54 デフォルトの 15.1 から引き上げ。
 - `react-test-renderer` は React 19 で非推奨。コンポーネント単位テストが必要になったら `@testing-library/react-native` を採用する。
 - `app.json` の `plugins` でカメラ・写真ライブラリの権限文字列（日本語）を設定済み。
 - ホストOSは macOS（iOS実機/Simulator で動作確認可能）。
