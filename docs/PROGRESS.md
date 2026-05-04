@@ -1,6 +1,6 @@
 # 開発進捗
 
-最終更新: 2026-05-04（Phase 5 完了）
+最終更新: 2026-05-04（Phase 6 完了）
 
 ## サマリ
 
@@ -11,7 +11,7 @@
 | 3 | カメラ／画像取得画面 | ✅ 完了 | [phase-3-camera.md](phases/phase-3-camera.md) |
 | 4 | 盤面検出（手動4点指定） | ✅ 完了 | [phase-4-grid-detect.md](phases/phase-4-grid-detect.md) |
 | 5 | セル分割＋数字OCR | ✅ 完了（精度改善は Phase 7） | [phase-5-ocr.md](phases/phase-5-ocr.md) |
-| 6 | 結果画面と手動修正UI | ⚪ 未着手 | [phase-6-result-ui.md](phases/phase-6-result-ui.md) |
+| 6 | 結果画面と手動修正UI | ✅ 完了 | [phase-6-result-ui.md](phases/phase-6-result-ui.md) |
 | 7 | エラーハンドリング・実機テスト | ⚪ 未着手 | [phase-7-polish.md](phases/phase-7-polish.md) |
 
 凡例: ✅ 完了 / 🟡 進行中 / ⚪ 未着手 / ⛔ 中断
@@ -86,12 +86,13 @@
 - [x] `npx expo prebuild --platform ios` 完了 / `npx expo run:ios` で iOS Simulator 起動確認
 - [x] サンプル画像で OCR 精度評価（IMG_1509 → IMG_1510）。透視変換欠如により行ズレ発生 → ADR-008 で Phase 7 へ持ち越し
 
-## Phase 6: 結果画面と手動修正UI ⚪
+## Phase 6: 結果画面と手動修正UI ✅
 
-- [ ] `src/screens/ReviewScreen.tsx`: OCR結果を9x9で表示、タップで修正
-- [ ] `src/screens/ResultScreen.tsx`: ソルバ実行 → 解答表示（元の数字は黒、解答は青）
-- [ ] エラー（解けない／入力不正）のフィードバック
-- [ ] Gitコミット
+- [x] `src/screens/ReviewScreen.tsx`: セルタップ編集（ボトムオーバーレイ数字ピッカー）＋「解く」ボタン
+- [x] `src/screens/ResultScreen.tsx`: ソルバ実行 → 解答表示（ヒント数字は黒、解答は青）
+- [x] エラー（解けない／入力不正）のフィードバック Alert
+- [x] iOS Simulator 動作確認 OK
+- [x] Gitコミット（`55a406d`）
 
 ## Phase 7: エラーハンドリング・実機テスト ⚪
 

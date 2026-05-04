@@ -14,8 +14,8 @@ OCR結果をユーザーが確認・修正できる画面と、ソルバ実行�
 - [x] エラー時のフィードバック（解けない／入力不正）Alert
 - [x] 「最初からやり直す」導線
 - [x] `npx tsc --noEmit` グリーン / `npm test` グリーン
-- [ ] iOS Simulator で動作確認 ← ユーザー実施
-- [ ] Gitコミット（日本語メッセージ）→ 承認待ち
+- [x] iOS Simulator で動作確認（問題なし）
+- [x] Gitコミット（`55a406d`）
 - [ ] Push + PR ← 承認待ち
 
 ## 設計判断
@@ -56,16 +56,52 @@ result → [最初からやり直す] → home
 
 ## 実装内容
 
-実装後に追記。
+### 変更ファイル
+
+| ファイル | 変更内容 |
+|---|---|
+| `src/screens/ReviewScreen.tsx` | 全面改修：セル選択・DigitPicker・「解く」ボタン |
+| `src/screens/ResultScreen.tsx` | 新規：解答グリッド（黒/青色分け）＋「やり直す」|
+| `App.tsx` | `result` 状態、`handleSolve` 追加 |
+
+### ReviewScreen の状態管理
+
+```typescript
+const [editedBoard, setEditedBoard] = useState<Board>(
+  () => board.map(row => [...row]) as Board
+);
+const [selectedCell, setSelectedCell] = useState<{r,c} | null>(null);
+```
+
+セルタップ → `selectedCell` をセット → `DigitPicker` が表示される。数字ボタン押下で `editedBoard` を不変更新し `selectedCell` を null に。グリッド背景タップで `selectedCell` を null（ピッカーを閉じる）。
+
+### ソルバとの接続（App.tsx）
+
+`handleSolve(editedBoard)` → `solve(editedBoard)` → status 分岐:
+- `solved` → `{ name: 'result', solvedBoard, confirmedBoard: editedBoard }` 遷移
+- `invalid` → Alert（ReviewScreen に留まる）
+- `unsolvable` → Alert（ReviewScreen に留まる）
 
 ## 動作確認
 
-実装後に追記。
+iOS Simulator で以下を確認:
+
+1. **OCR → Review 遷移**: 補正後画像から OCR 実行 → ReviewScreen に 9×9 表示
+2. **セル編集**: セルをタップ → ボトムオーバーレイに 1〜9 ＋ ✕ ボタン表示 → タップで値変更、グリッド外タップで閉じる
+3. **解く（正常系）**: 正しい問題を手入力 → 「解く」→ ResultScreen に黒/青の解答表示
+4. **解く（エラー系）**: 矛盾した値を入れて「解く」→ Alert「入力エラー」、ReviewScreen に留まる
+5. **最初からやり直す**: ResultScreen から Home に戻る
+
+**結果**: 問題なし。
 
 ## 次Phaseへの引き継ぎ
 
-完了時に追記。
+Phase 7 へ:
+- OCR 精度改善（透視変換・前処理・ML Kit confidence）— ADR-008 参照
+- カメラ権限拒否時のフォールバック UI
+- Android 実機 / エミュレータ動作確認
+- README 作成
 
 ## ステータス
 
-🟡 実装中
+✅ 完了
