@@ -1,0 +1,10 @@
+{
+  "name": "sudoku-detector",
+  "version": "1.0.0",
+  "description": "Sudoku grid rectangle detector using native Vision Framework (iOS) / ML Kit (Android)",
+  "main": "index.ts",
+  "types": "index.ts",
+  "peerDependencies": {
+    "expo-modules-core": "*"
+  }
+}

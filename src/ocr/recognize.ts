@@ -31,20 +31,18 @@ async function recognizeCell(cellUri: string): Promise<Cell> {
 
 /**
  * 81 セルの画像から数字を認識し、9x9 の Board を返す。
- * 全セルを並列実行する。失敗したセルは 0（空欄）扱い。
+ * 1行9セルずつ逐次処理することで ML Kit への同時リクエスト数を抑える。
+ * 失敗したセルは 0（空欄）扱い。
  */
 export async function recognizeBoard(cellImages: CellImageGrid): Promise<Board> {
-  const tasks: Promise<{ row: number; col: number; digit: Cell }>[] = [];
-  for (let row = 0; row < 9; row++) {
-    for (let col = 0; col < 9; col++) {
-      const uri = cellImages[row][col];
-      tasks.push(recognizeCell(uri).then((digit) => ({ row, col, digit })));
-    }
-  }
-  const results = await Promise.all(tasks);
   const board: Board = Array.from({ length: 9 }, () => Array<Cell>(9).fill(0));
-  for (const { row, col, digit } of results) {
-    board[row][col] = digit;
+  for (let row = 0; row < 9; row++) {
+    const rowDigits = await Promise.all(
+      Array.from({ length: 9 }, (_, col) => recognizeCell(cellImages[row][col]))
+    );
+    for (let col = 0; col < 9; col++) {
+      board[row][col] = rowDigits[col];
+    }
   }
   return board;
 }

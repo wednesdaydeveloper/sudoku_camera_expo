@@ -11,13 +11,14 @@ import {
   View,
 } from 'react-native';
 import { color, fontSize, radius, space, tap } from '../theme/tokens';
-import { cropToBoundingRect, type CropResult } from '../grid/cropToBoundingRect';
 import type { Corners, ImageSize, Point } from '../grid/types';
 
 interface CornerPickerScreenProps {
   imageUri: string;
+  /** 自動検出された初期コーナー（画像座標系）。未指定時は 10% インセット */
+  initialCorners?: Corners;
   onCancel: () => void;
-  onCropped: (result: CropResult, corners: Corners, naturalSize: ImageSize) => void;
+  onConfirm: (corners: Corners, naturalSize: ImageSize) => void;
 }
 
 const HANDLE_HIT_SIZE = 44;
@@ -57,7 +58,12 @@ function clampToImage(p: Point, layout: DisplayLayout): Point {
   };
 }
 
-export function CornerPickerScreen({ imageUri, onCancel, onCropped }: CornerPickerScreenProps) {
+export function CornerPickerScreen({
+  imageUri,
+  initialCorners,
+  onCancel,
+  onConfirm,
+}: CornerPickerScreenProps) {
   const [naturalSize, setNaturalSize] = useState<ImageSize | null>(null);
   const [containerSize, setContainerSize] = useState<ImageSize | null>(null);
   const [corners, setCorners] = useState<Corners | null>(null);
@@ -76,23 +82,29 @@ export function CornerPickerScreen({ imageUri, onCancel, onCropped }: CornerPick
 
   useEffect(() => {
     if (!layout || corners) return;
-    const inset = { x: layout.imageWidth * 0.1, y: layout.imageHeight * 0.1 };
-    setCorners({
-      topLeft: { x: layout.offsetX + inset.x, y: layout.offsetY + inset.y },
-      topRight: {
-        x: layout.offsetX + layout.imageWidth - inset.x,
-        y: layout.offsetY + inset.y,
-      },
-      bottomRight: {
-        x: layout.offsetX + layout.imageWidth - inset.x,
-        y: layout.offsetY + layout.imageHeight - inset.y,
-      },
-      bottomLeft: {
-        x: layout.offsetX + inset.x,
-        y: layout.offsetY + layout.imageHeight - inset.y,
-      },
-    });
-  }, [layout, corners]);
+    if (initialCorners && naturalSize) {
+      // 画像座標 → 表示座標に変換して初期コーナーとして使う
+      const scale = layout.imageWidth / naturalSize.width;
+      const toDisplay = (p: Point): Point => ({
+        x: p.x * scale + layout.offsetX,
+        y: p.y * scale + layout.offsetY,
+      });
+      setCorners({
+        topLeft:     toDisplay(initialCorners.topLeft),
+        topRight:    toDisplay(initialCorners.topRight),
+        bottomRight: toDisplay(initialCorners.bottomRight),
+        bottomLeft:  toDisplay(initialCorners.bottomLeft),
+      });
+    } else {
+      const inset = { x: layout.imageWidth * 0.1, y: layout.imageHeight * 0.1 };
+      setCorners({
+        topLeft:     { x: layout.offsetX + inset.x,                         y: layout.offsetY + inset.y },
+        topRight:    { x: layout.offsetX + layout.imageWidth - inset.x,      y: layout.offsetY + inset.y },
+        bottomRight: { x: layout.offsetX + layout.imageWidth - inset.x,      y: layout.offsetY + layout.imageHeight - inset.y },
+        bottomLeft:  { x: layout.offsetX + inset.x,                         y: layout.offsetY + layout.imageHeight - inset.y },
+      });
+    }
+  }, [layout, corners, initialCorners, naturalSize]);
 
   const updateCorner = (key: keyof Corners, p: Point) => {
     setCorners((current) => {
@@ -101,29 +113,22 @@ export function CornerPickerScreen({ imageUri, onCancel, onCropped }: CornerPick
     });
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!corners || !layout || !naturalSize || processing) return;
     setProcessing(true);
-    try {
-      const scale = naturalSize.width / layout.imageWidth;
-      const toImage = (p: Point): Point => ({
-        x: (p.x - layout.offsetX) * scale,
-        y: (p.y - layout.offsetY) * scale,
-      });
-      const imageCorners: Corners = {
-        topLeft: toImage(corners.topLeft),
-        topRight: toImage(corners.topRight),
-        bottomRight: toImage(corners.bottomRight),
-        bottomLeft: toImage(corners.bottomLeft),
-      };
-      const result = await cropToBoundingRect(imageUri, imageCorners, naturalSize);
-      onCropped(result, imageCorners, naturalSize);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : '画像の補正に失敗しました';
-      Alert.alert('エラー', message);
-    } finally {
-      setProcessing(false);
-    }
+    const scale = naturalSize.width / layout.imageWidth;
+    const toImage = (p: Point): Point => ({
+      x: (p.x - layout.offsetX) * scale,
+      y: (p.y - layout.offsetY) * scale,
+    });
+    const imageCorners: Corners = {
+      topLeft:     toImage(corners.topLeft),
+      topRight:    toImage(corners.topRight),
+      bottomRight: toImage(corners.bottomRight),
+      bottomLeft:  toImage(corners.bottomLeft),
+    };
+    onConfirm(imageCorners, naturalSize);
+    setProcessing(false);
   };
 
   return (
@@ -207,9 +212,7 @@ export function CornerPickerScreen({ imageUri, onCancel, onCropped }: CornerPick
             (processing || !corners) && styles.disabled,
             pressed && styles.pressed,
           ]}
-          onPress={() => {
-            void handleConfirm();
-          }}
+          onPress={handleConfirm}
           disabled={processing || !corners}
           accessibilityRole="button"
         >

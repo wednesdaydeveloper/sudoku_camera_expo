@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Linking } from 'react-native';
+import { Alert, Image, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -11,19 +11,33 @@ import { ReviewScreen } from './src/screens/ReviewScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
 import { segmentBoardFromCorners } from './src/ocr/segment';
 import { recognizeBoard } from './src/ocr/recognize';
+import { detectSudokuCorners } from './src/ocr/detectCorners';
 import { solve } from './src/solver';
 import type { Corners, ImageSize } from './src/grid/types';
 import type { Board } from './src/solver/types';
+
+const MIN_HINTS = 17;
+const MAX_RETRY = 3;
+const EXPAND_RATIOS = [0, 0.05, 0.10];
 
 type Screen =
   | { name: 'home' }
   | { name: 'camera' }
   | { name: 'preview'; imageUri: string }
-  | { name: 'cornerPicker'; imageUri: string }
-  | { name: 'croppedPreview'; imageUri: string; imageSize: ImageSize; originalImageUri: string; corners: Corners; naturalSize: ImageSize }
+  | { name: 'cornerPicker'; imageUri: string; naturalSize: ImageSize; initialCorners: Corners | null }
   | { name: 'processing'; message?: string }
   | { name: 'review'; board: Board }
   | { name: 'result'; solvedBoard: Board; confirmedBoard: Board };
+
+async function getImageSize(uri: string): Promise<ImageSize> {
+  return new Promise((resolve, reject) => {
+    Image.getSize(uri, (width, height) => resolve({ width, height }), reject);
+  });
+}
+
+function countHints(board: Board): number {
+  return board.flat().filter((v) => v !== 0).length;
+}
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
@@ -74,17 +88,48 @@ export default function App() {
     }
   };
 
+  /** preview → 自動検出 → cornerPicker */
+  const handleProceedFromPreview = async (imageUri: string) => {
+    setScreen({ name: 'processing', message: '盤面を検出しています…' });
+    try {
+      const naturalSize = await getImageSize(imageUri);
+      const detected = await detectSudokuCorners(imageUri, naturalSize);
+      setScreen({ name: 'cornerPicker', imageUri, naturalSize, initialCorners: detected });
+    } catch {
+      // 検出失敗時はデフォルトコーナーで cornerPicker を開く
+      try {
+        const naturalSize = await getImageSize(imageUri);
+        setScreen({ name: 'cornerPicker', imageUri, naturalSize, initialCorners: null });
+      } catch {
+        Alert.alert('エラー', '画像を読み込めませんでした。');
+        setScreen({ name: 'home' });
+      }
+    }
+  };
+
+  /** cornerPicker 確定 → OCR（ヒント不足時は拡張して最大 MAX_RETRY 回再試行） */
   const runOcrPipeline = async (
-    originalImageUri: string,
-    corners: Corners,
+    imageUri: string,
+    confirmedCorners: Corners,
     naturalSize: ImageSize
   ) => {
     setScreen({ name: 'processing', message: 'セルに分割しています…' });
     try {
-      const cellImages = await segmentBoardFromCorners(originalImageUri, corners, naturalSize);
-      setScreen({ name: 'processing', message: '数字を認識しています…' });
-      const board = await recognizeBoard(cellImages);
-      setScreen({ name: 'review', board });
+      for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
+        const corners = attempt === 0
+          ? confirmedCorners
+          : expandCorners(confirmedCorners, naturalSize, EXPAND_RATIOS[attempt]);
+
+        const cellImages = await segmentBoardFromCorners(imageUri, corners, naturalSize);
+        setScreen({ name: 'processing', message: '数字を認識しています…' });
+        const board = await recognizeBoard(cellImages);
+
+        if (countHints(board) >= MIN_HINTS || attempt === MAX_RETRY - 1) {
+          setScreen({ name: 'review', board });
+          return;
+        }
+        setScreen({ name: 'processing', message: `再認識しています… (${attempt + 2}/${MAX_RETRY})` });
+      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '画像の解析に失敗しました';
       Alert.alert('エラー', message);
@@ -98,9 +143,7 @@ export default function App() {
       {screen.name === 'home' && (
         <HomeScreen
           onPressCapture={() => setScreen({ name: 'camera' })}
-          onPressPickPhoto={() => {
-            void handlePickPhoto();
-          }}
+          onPressPickPhoto={() => { void handlePickPhoto(); }}
         />
       )}
       {screen.name === 'camera' && (
@@ -113,39 +156,18 @@ export default function App() {
         <ImagePreviewScreen
           imageUri={screen.imageUri}
           onRetry={() => setScreen({ name: 'home' })}
-          onProceed={() =>
-            setScreen({ name: 'cornerPicker', imageUri: screen.imageUri })
-          }
+          onProceed={() => { void handleProceedFromPreview(screen.imageUri); }}
+          proceedLabel="次へ →"
         />
       )}
       {screen.name === 'cornerPicker' && (
         <CornerPickerScreen
           imageUri={screen.imageUri}
-          onCancel={() =>
-            setScreen({ name: 'preview', imageUri: screen.imageUri })
-          }
-          onCropped={(result, corners, naturalSize) =>
-            setScreen({
-              name: 'croppedPreview',
-              imageUri: result.uri,
-              imageSize: { width: result.width, height: result.height },
-              originalImageUri: screen.imageUri,
-              corners,
-              naturalSize,
-            })
-          }
-        />
-      )}
-      {screen.name === 'croppedPreview' && (
-        <ImagePreviewScreen
-          imageUri={screen.imageUri}
-          onRetry={() => setScreen({ name: 'home' })}
-          onProceed={() => {
-            void runOcrPipeline(screen.originalImageUri, screen.corners, screen.naturalSize);
+          initialCorners={screen.initialCorners ?? undefined}
+          onCancel={() => setScreen({ name: 'preview', imageUri: screen.imageUri })}
+          onConfirm={(corners, naturalSize) => {
+            void runOcrPipeline(screen.imageUri, corners, naturalSize);
           }}
-          note="補正後の盤面です。OCR で数字を読み取ります。"
-          retryLabel="やり直す"
-          proceedLabel="OCR を実行 →"
         />
       )}
       {screen.name === 'processing' && (
@@ -167,4 +189,19 @@ export default function App() {
       )}
     </>
   );
+}
+
+function expandCorners(corners: Corners, imageSize: ImageSize, ratio: number): Corners {
+  const cx = (corners.topLeft.x + corners.topRight.x + corners.bottomLeft.x + corners.bottomRight.x) / 4;
+  const cy = (corners.topLeft.y + corners.topRight.y + corners.bottomLeft.y + corners.bottomRight.y) / 4;
+  const expand = (pt: { x: number; y: number }) => ({
+    x: Math.max(0, Math.min(imageSize.width,  cx + (pt.x - cx) * (1 + ratio))),
+    y: Math.max(0, Math.min(imageSize.height, cy + (pt.y - cy) * (1 + ratio))),
+  });
+  return {
+    topLeft:     expand(corners.topLeft),
+    topRight:    expand(corners.topRight),
+    bottomRight: expand(corners.bottomRight),
+    bottomLeft:  expand(corners.bottomLeft),
+  };
 }

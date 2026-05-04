@@ -3,7 +3,8 @@ import type { CellImageGrid, CellRect, ImageSize, SegmentOptions } from './types
 import type { Corners } from '../grid/types';
 
 const BOARD_SIZE = 9;
-const DEFAULT_INSET_RATIO = 0.1;
+const DEFAULT_INSET_RATIO = 0.12;
+const CELL_EXPORT_WIDTH = 200;
 
 /**
  * セル (r, c) のクロップ矩形を算出する純関数。
@@ -100,9 +101,22 @@ function bilinear(
   };
 }
 
+async function cropAndResize(
+  imageUri: string,
+  rect: CellRect
+): Promise<string> {
+  const ref = await ImageManipulator.manipulate(imageUri)
+    .crop(rect)
+    .resize({ width: CELL_EXPORT_WIDTH })
+    .renderAsync();
+  const saved = await ref.saveAsync({ compress: 0.9, format: SaveFormat.JPEG });
+  return saved.uri;
+}
+
 /**
  * 盤面画像を 9x9 のセル画像に分割する（等分割版）。
  * corners が不明な場合のフォールバックとして残す。
+ * メモリ圧力を避けるため 1行9セルずつ逐次処理する。
  */
 export async function segmentBoard(
   imageUri: string,
@@ -110,25 +124,18 @@ export async function segmentBoard(
   options: SegmentOptions = {}
 ): Promise<CellImageGrid> {
   const insetRatio = options.insetRatio ?? DEFAULT_INSET_RATIO;
-  const tasks: Promise<{ row: number; col: number; uri: string }>[] = [];
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      const rect = computeCellRect(row, col, imageSize, insetRatio);
-      tasks.push(
-        ImageManipulator.manipulate(imageUri)
-          .crop(rect)
-          .renderAsync()
-          .then((ref) => ref.saveAsync({ compress: 0.9, format: SaveFormat.JPEG }))
-          .then((result) => ({ row, col, uri: result.uri }))
-      );
-    }
-  }
-  const results = await Promise.all(tasks);
   const grid: CellImageGrid = Array.from({ length: BOARD_SIZE }, () =>
     Array<string>(BOARD_SIZE).fill('')
   );
-  for (const { row, col, uri } of results) {
-    grid[row][col] = uri;
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    const uris = await Promise.all(
+      Array.from({ length: BOARD_SIZE }, (_, col) =>
+        cropAndResize(imageUri, computeCellRect(row, col, imageSize, insetRatio))
+      )
+    );
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      grid[row][col] = uris[col];
+    }
   }
   return grid;
 }
@@ -137,6 +144,7 @@ export async function segmentBoard(
  * 4隅の座標から双線形補間でセルを分割する（透視歪み対応版）。
  * 元画像の URI と corners（元画像座標系）を直接受け取り、
  * 中間クロップを介さずに 81 セルを切り出す。
+ * メモリ圧力を避けるため 1行9セルずつ逐次処理する。
  */
 export async function segmentBoardFromCorners(
   imageUri: string,
@@ -145,25 +153,18 @@ export async function segmentBoardFromCorners(
   options: SegmentOptions = {}
 ): Promise<CellImageGrid> {
   const insetRatio = options.insetRatio ?? DEFAULT_INSET_RATIO;
-  const tasks: Promise<{ row: number; col: number; uri: string }>[] = [];
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      const rect = computeCellRectFromCorners(row, col, corners, imageSize, insetRatio);
-      tasks.push(
-        ImageManipulator.manipulate(imageUri)
-          .crop(rect)
-          .renderAsync()
-          .then((ref) => ref.saveAsync({ compress: 0.9, format: SaveFormat.JPEG }))
-          .then((result) => ({ row, col, uri: result.uri }))
-      );
-    }
-  }
-  const results = await Promise.all(tasks);
   const grid: CellImageGrid = Array.from({ length: BOARD_SIZE }, () =>
     Array<string>(BOARD_SIZE).fill('')
   );
-  for (const { row, col, uri } of results) {
-    grid[row][col] = uri;
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    const uris = await Promise.all(
+      Array.from({ length: BOARD_SIZE }, (_, col) =>
+        cropAndResize(imageUri, computeCellRectFromCorners(row, col, corners, imageSize, insetRatio))
+      )
+    );
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      grid[row][col] = uris[col];
+    }
   }
   return grid;
 }
