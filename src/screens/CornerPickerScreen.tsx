@@ -231,26 +231,30 @@ interface CornerHandleProps {
 }
 
 function CornerHandle({ point, onMove, label }: CornerHandleProps) {
+  // ドラッグ中の親再レンダで PanResponder のクロージャが古い point/onMove を
+  // 参照しないよう、毎レンダで ref を更新する。startRef はジェスチャ開始時に
+  // のみ確定させ、ジェスチャ中は触らない（gesture.dx/dy が累積値のため）。
+  const pointRef = useRef(point);
+  pointRef.current = point;
+  const onMoveRef = useRef(onMove);
+  onMoveRef.current = onMove;
   const startRef = useRef<Point>(point);
+
   const responder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        startRef.current = point;
+        startRef.current = pointRef.current;
       },
       onPanResponderMove: (_, gesture) => {
-        onMove({
+        onMoveRef.current({
           x: startRef.current.x + gesture.dx,
           y: startRef.current.y + gesture.dy,
         });
       },
     })
   ).current;
-
-  useEffect(() => {
-    startRef.current = point;
-  }, [point]);
 
   return (
     <View
