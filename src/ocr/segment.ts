@@ -114,33 +114,6 @@ async function cropAndResize(
 }
 
 /**
- * 盤面画像を 9x9 のセル画像に分割する（等分割版）。
- * corners が不明な場合のフォールバックとして残す。
- * メモリ圧力を避けるため 1行9セルずつ逐次処理する。
- */
-export async function segmentBoard(
-  imageUri: string,
-  imageSize: ImageSize,
-  options: SegmentOptions = {}
-): Promise<CellImageGrid> {
-  const insetRatio = options.insetRatio ?? DEFAULT_INSET_RATIO;
-  const grid: CellImageGrid = Array.from({ length: BOARD_SIZE }, () =>
-    Array<string>(BOARD_SIZE).fill('')
-  );
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    const uris = await Promise.all(
-      Array.from({ length: BOARD_SIZE }, (_, col) =>
-        cropAndResize(imageUri, computeCellRect(row, col, imageSize, insetRatio))
-      )
-    );
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      grid[row][col] = uris[col];
-    }
-  }
-  return grid;
-}
-
-/**
  * 4隅の座標から双線形補間でセルを分割する（透視歪み対応版）。
  * 元画像の URI と corners（元画像座標系）を直接受け取り、
  * 中間クロップを介さずに 81 セルを切り出す。

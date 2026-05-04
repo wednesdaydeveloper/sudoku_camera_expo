@@ -2,12 +2,13 @@ import { SudokuDetector } from 'sudoku-detector';
 import type { Corners } from '../grid/types';
 import type { ImageSize } from './types';
 
-/** confidence がこの値以上ならネイティブ検出を採用する */
-const NATIVE_CONFIDENCE_THRESHOLD = 0.3;
+/** confidence がこの値以上ならネイティブ検出を採用する（低信頼度でもフォールバックより有用） */
+const NATIVE_CONFIDENCE_THRESHOLD = 0.1;
 
 function fallbackCorners(imageSize: ImageSize, expandRatio = 0): Corners {
-  const ix = imageSize.width * Math.max(0, 0.05 - expandRatio);
-  const iy = imageSize.height * Math.max(0, 0.05 - expandRatio);
+  // 5% インセットは画像端すぎて調整が難しいため 20% を基準にする
+  const ix = imageSize.width * Math.max(0, 0.20 - expandRatio);
+  const iy = imageSize.height * Math.max(0, 0.20 - expandRatio);
   return {
     topLeft:     { x: ix,                        y: iy },
     topRight:    { x: imageSize.width - ix,       y: iy },
@@ -16,7 +17,7 @@ function fallbackCorners(imageSize: ImageSize, expandRatio = 0): Corners {
   };
 }
 
-function expandCorners(corners: Corners, imageSize: ImageSize, ratio: number): Corners {
+export function expandCorners(corners: Corners, imageSize: ImageSize, ratio: number): Corners {
   if (ratio === 0) return corners;
   const cx = (corners.topLeft.x + corners.topRight.x + corners.bottomLeft.x + corners.bottomRight.x) / 4;
   const cy = (corners.topLeft.y + corners.topRight.y + corners.bottomLeft.y + corners.bottomRight.y) / 4;

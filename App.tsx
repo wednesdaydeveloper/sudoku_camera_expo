@@ -11,7 +11,7 @@ import { ReviewScreen } from './src/screens/ReviewScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
 import { segmentBoardFromCorners } from './src/ocr/segment';
 import { recognizeBoard } from './src/ocr/recognize';
-import { detectSudokuCorners } from './src/ocr/detectCorners';
+import { detectSudokuCorners, expandCorners } from './src/ocr/detectCorners';
 import { solve } from './src/solver';
 import type { Corners, ImageSize } from './src/grid/types';
 import type { Board } from './src/solver/types';
@@ -113,22 +113,36 @@ export default function App() {
     confirmedCorners: Corners,
     naturalSize: ImageSize
   ) => {
-    setScreen({ name: 'processing', message: 'セルに分割しています…' });
     try {
       for (let attempt = 0; attempt < MAX_RETRY; attempt++) {
-        const corners = attempt === 0
-          ? confirmedCorners
-          : expandCorners(confirmedCorners, naturalSize, EXPAND_RATIOS[attempt]);
+        // 各試行の先頭でメッセージを設定 → await 前に確実にレンダリングされる
+        const segMsg =
+          attempt === 0
+            ? `セルに分割しています… (1/${MAX_RETRY})`
+            : `再認識しています… (${attempt + 1}/${MAX_RETRY})`;
+        setScreen({ name: 'processing', message: segMsg });
+
+        const corners =
+          attempt === 0
+            ? confirmedCorners
+            : expandCorners(confirmedCorners, naturalSize, EXPAND_RATIOS[attempt]);
 
         const cellImages = await segmentBoardFromCorners(imageUri, corners, naturalSize);
-        setScreen({ name: 'processing', message: '数字を認識しています…' });
+        setScreen({ name: 'processing', message: `数字を認識しています… (${attempt + 1}/${MAX_RETRY})` });
         const board = await recognizeBoard(cellImages);
+        const hints = countHints(board);
 
-        if (countHints(board) >= MIN_HINTS || attempt === MAX_RETRY - 1) {
+        if (hints >= MIN_HINTS || attempt === MAX_RETRY - 1) {
+          if (hints < MIN_HINTS) {
+            Alert.alert(
+              'ヒント数不足',
+              `認識できた数字は ${hints} 個でした（目安: ${MIN_HINTS} 個以上）。\nコーナーを再調整して再試行してください。`,
+              [{ text: 'OK' }]
+            );
+          }
           setScreen({ name: 'review', board });
           return;
         }
-        setScreen({ name: 'processing', message: `再認識しています… (${attempt + 2}/${MAX_RETRY})` });
       }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '画像の解析に失敗しました';
@@ -189,19 +203,4 @@ export default function App() {
       )}
     </>
   );
-}
-
-function expandCorners(corners: Corners, imageSize: ImageSize, ratio: number): Corners {
-  const cx = (corners.topLeft.x + corners.topRight.x + corners.bottomLeft.x + corners.bottomRight.x) / 4;
-  const cy = (corners.topLeft.y + corners.topRight.y + corners.bottomLeft.y + corners.bottomRight.y) / 4;
-  const expand = (pt: { x: number; y: number }) => ({
-    x: Math.max(0, Math.min(imageSize.width,  cx + (pt.x - cx) * (1 + ratio))),
-    y: Math.max(0, Math.min(imageSize.height, cy + (pt.y - cy) * (1 + ratio))),
-  });
-  return {
-    topLeft:     expand(corners.topLeft),
-    topRight:    expand(corners.topRight),
-    bottomRight: expand(corners.bottomRight),
-    bottomLeft:  expand(corners.bottomLeft),
-  };
 }

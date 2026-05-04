@@ -1,11 +1,4 @@
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import type { BoundingRect, Corners, ImageSize } from './types';
-
-export interface CropResult {
-  uri: string;
-  width: number;
-  height: number;
-}
 
 /**
  * 4 隅の座標から軸並行な bounding rect を算出する。
@@ -34,18 +27,4 @@ export function computeBoundingRect(
   const width = Math.max(0, maxX - minX);
   const height = Math.max(0, maxY - minY);
   return { originX: minX, originY: minY, width, height };
-}
-
-export async function cropToBoundingRect(
-  imageUri: string,
-  corners: Corners,
-  imageSize: ImageSize
-): Promise<CropResult> {
-  const rect = computeBoundingRect(corners, imageSize);
-  if (rect.width <= 0 || rect.height <= 0) {
-    throw new Error('クロップ範囲が不正です');
-  }
-  const ref = await ImageManipulator.manipulate(imageUri).crop(rect).renderAsync();
-  const result = await ref.saveAsync({ compress: 1, format: SaveFormat.JPEG });
-  return { uri: result.uri, width: result.width, height: result.height };
 }
