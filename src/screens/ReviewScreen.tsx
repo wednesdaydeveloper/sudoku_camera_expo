@@ -1,40 +1,87 @@
+import { useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { color, fontSize, radius, space, tap } from '../theme/tokens';
-import type { Board } from '../solver/types';
+import type { Board, Cell } from '../solver/types';
 
 interface ReviewScreenProps {
   board: Board;
+  onSolve: (editedBoard: Board) => void;
   onBack: () => void;
 }
 
 const BOARD_SIZE = 9;
 const BOX_SIZE = 3;
+const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 
-/**
- * Phase 5 の暫定 Review 画面。OCR 結果を 9x9 で表示するのみ（編集不可）。
- * Phase 6 でタップ修正・「解く」遷移を実装予定。
- */
-export function ReviewScreen({ board, onBack }: ReviewScreenProps) {
+export function ReviewScreen({ board, onSolve, onBack }: ReviewScreenProps) {
+  const [editedBoard, setEditedBoard] = useState<Board>(
+    () => board.map((row) => [...row]) as Board
+  );
+  const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
+
+  const handleCellPress = (r: number, c: number) => {
+    setSelectedCell((prev) =>
+      prev?.r === r && prev?.c === c ? null : { r, c }
+    );
+  };
+
+  const handleDigitPress = (digit: Cell) => {
+    if (!selectedCell) return;
+    const { r, c } = selectedCell;
+    setEditedBoard((prev) => {
+      const next = prev.map((row) => [...row]) as Board;
+      next[r][c] = digit;
+      return next;
+    });
+    setSelectedCell(null);
+  };
+
+  const handleClear = () => {
+    if (!selectedCell) return;
+    const { r, c } = selectedCell;
+    setEditedBoard((prev) => {
+      const next = prev.map((row) => [...row]) as Board;
+      next[r][c] = 0;
+      return next;
+    });
+    setSelectedCell(null);
+  };
+
+  const handleDismiss = () => setSelectedCell(null);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>OCR 結果（仮表示）</Text>
-        <Text style={styles.subtitle}>
-          Phase 6 でタップ修正・「解く」を実装します
-        </Text>
+        <Text style={styles.title}>OCR 結果を確認・修正</Text>
+        <Text style={styles.subtitle}>セルをタップして数字を修正できます</Text>
       </View>
 
-      <View style={styles.gridContainer}>
-        <Grid board={board} />
-      </View>
+      <Pressable style={styles.gridContainer} onPress={handleDismiss}>
+        <Grid
+          board={editedBoard}
+          selectedCell={selectedCell}
+          onCellPress={handleCellPress}
+        />
+      </Pressable>
+
+      {selectedCell && (
+        <DigitPicker onDigitPress={handleDigitPress} onClear={handleClear} />
+      )}
 
       <View style={styles.buttonRow}>
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.buttonSecondary, pressed && styles.pressed]}
           onPress={onBack}
           accessibilityRole="button"
         >
-          <Text style={styles.buttonText}>ホームへ戻る</Text>
+          <Text style={styles.buttonSecondaryText}>戻る</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+          onPress={() => onSolve(editedBoard)}
+          accessibilityRole="button"
+        >
+          <Text style={styles.buttonText}>解く →</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -43,31 +90,71 @@ export function ReviewScreen({ board, onBack }: ReviewScreenProps) {
 
 interface GridProps {
   board: Board;
+  selectedCell: { r: number; c: number } | null;
+  onCellPress: (r: number, c: number) => void;
 }
 
-function Grid({ board }: GridProps) {
+function Grid({ board, selectedCell, onCellPress }: GridProps) {
   return (
     <View style={styles.grid}>
       {board.map((row, r) => (
         <View key={r} style={styles.row}>
           {row.map((value, c) => {
-            const isRightBoxBoundary = (c + 1) % BOX_SIZE === 0 && c < BOARD_SIZE - 1;
-            const isBottomBoxBoundary = (r + 1) % BOX_SIZE === 0 && r < BOARD_SIZE - 1;
+            const isRightBox = (c + 1) % BOX_SIZE === 0 && c < BOARD_SIZE - 1;
+            const isBottomBox = (r + 1) % BOX_SIZE === 0 && r < BOARD_SIZE - 1;
+            const isSelected = selectedCell?.r === r && selectedCell?.c === c;
             return (
-              <View
+              <Pressable
                 key={c}
                 style={[
                   styles.cell,
-                  isRightBoxBoundary && styles.cellBoxRight,
-                  isBottomBoxBoundary && styles.cellBoxBottom,
+                  isRightBox && styles.cellBoxRight,
+                  isBottomBox && styles.cellBoxBottom,
+                  isSelected && styles.cellSelected,
                 ]}
+                onPress={() => onCellPress(r, c)}
+                accessibilityRole="button"
+                accessibilityLabel={`行${r + 1} 列${c + 1}: ${value === 0 ? '空' : value}`}
               >
-                <Text style={styles.cellText}>{value === 0 ? '' : String(value)}</Text>
-              </View>
+                <Text style={[styles.cellText, isSelected && styles.cellTextSelected]}>
+                  {value === 0 ? '' : String(value)}
+                </Text>
+              </Pressable>
             );
           })}
         </View>
       ))}
+    </View>
+  );
+}
+
+interface DigitPickerProps {
+  onDigitPress: (digit: Cell) => void;
+  onClear: () => void;
+}
+
+function DigitPicker({ onDigitPress, onClear }: DigitPickerProps) {
+  return (
+    <View style={styles.picker}>
+      {DIGITS.map((d) => (
+        <Pressable
+          key={d}
+          style={({ pressed }) => [styles.pickerButton, pressed && styles.pressed]}
+          onPress={() => onDigitPress(d as Cell)}
+          accessibilityRole="button"
+          accessibilityLabel={String(d)}
+        >
+          <Text style={styles.pickerButtonText}>{d}</Text>
+        </Pressable>
+      ))}
+      <Pressable
+        style={({ pressed }) => [styles.pickerButton, styles.pickerClear, pressed && styles.pressed]}
+        onPress={onClear}
+        accessibilityRole="button"
+        accessibilityLabel="クリア"
+      >
+        <Text style={[styles.pickerButtonText, styles.pickerClearText]}>✕</Text>
+      </Pressable>
     </View>
   );
 }
@@ -80,6 +167,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: space.md,
     paddingTop: space.md,
+    paddingBottom: space.sm,
   },
   title: {
     fontSize: fontSize.heading,
@@ -123,21 +211,70 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: color.text,
   },
+  cellSelected: {
+    backgroundColor: color.primary + '22',
+  },
   cellText: {
     fontSize: fontSize.heading,
     color: color.text,
     fontWeight: '500',
   },
+  cellTextSelected: {
+    color: color.primary,
+    fontWeight: '700',
+  },
+  picker: {
+    flexDirection: 'row',
+    paddingHorizontal: space.sm,
+    paddingVertical: space.sm,
+    backgroundColor: color.surface,
+    borderTopWidth: 1,
+    borderTopColor: color.border,
+    gap: space.xs,
+  },
+  pickerButton: {
+    flex: 1,
+    minHeight: tap.minSize,
+    borderRadius: radius.md,
+    backgroundColor: color.bg,
+    borderWidth: 1,
+    borderColor: color.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerClear: {
+    backgroundColor: color.surface,
+    borderColor: color.border,
+  },
+  pickerButtonText: {
+    fontSize: fontSize.body,
+    fontWeight: '600',
+    color: color.text,
+  },
+  pickerClearText: {
+    color: color.danger,
+  },
   buttonRow: {
     flexDirection: 'row',
     paddingHorizontal: space.md,
     paddingBottom: space.md,
+    gap: space.sm,
   },
   button: {
-    flex: 1,
+    flex: 2,
     minHeight: tap.buttonHeight,
     borderRadius: radius.md,
     backgroundColor: color.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonSecondary: {
+    flex: 1,
+    minHeight: tap.buttonHeight,
+    borderRadius: radius.md,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -146,7 +283,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.button,
     fontWeight: '600',
   },
+  buttonSecondaryText: {
+    color: color.text,
+    fontSize: fontSize.button,
+    fontWeight: '600',
+  },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.7,
   },
 });

@@ -8,8 +8,10 @@ import { ImagePreviewScreen } from './src/screens/ImagePreviewScreen';
 import { CornerPickerScreen } from './src/screens/CornerPickerScreen';
 import { ProcessingScreen } from './src/screens/ProcessingScreen';
 import { ReviewScreen } from './src/screens/ReviewScreen';
+import { ResultScreen } from './src/screens/ResultScreen';
 import { segmentBoard } from './src/ocr/segment';
 import { recognizeBoard } from './src/ocr/recognize';
+import { solve } from './src/solver';
 import type { ImageSize } from './src/grid/types';
 import type { Board } from './src/solver/types';
 
@@ -20,7 +22,8 @@ type Screen =
   | { name: 'cornerPicker'; imageUri: string }
   | { name: 'croppedPreview'; imageUri: string; imageSize: ImageSize }
   | { name: 'processing'; message?: string }
-  | { name: 'review'; board: Board };
+  | { name: 'review'; board: Board }
+  | { name: 'result'; solvedBoard: Board; confirmedBoard: Board };
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
@@ -38,6 +41,17 @@ export default function App() {
       return;
     }
     setScreen({ name: 'preview', imageUri: asset.uri });
+  };
+
+  const handleSolve = (editedBoard: Board) => {
+    const result = solve(editedBoard);
+    if (result.status === 'solved') {
+      setScreen({ name: 'result', solvedBoard: result.board, confirmedBoard: editedBoard });
+    } else if (result.status === 'invalid') {
+      Alert.alert('入力エラー', result.reason + '\nセルを修正してください。');
+    } else {
+      Alert.alert('解けません', 'この問題は解が存在しないか、入力に誤りがあります。');
+    }
   };
 
   const runOcrPipeline = async (imageUri: string, imageSize: ImageSize) => {
@@ -113,7 +127,15 @@ export default function App() {
       {screen.name === 'review' && (
         <ReviewScreen
           board={screen.board}
+          onSolve={handleSolve}
           onBack={() => setScreen({ name: 'home' })}
+        />
+      )}
+      {screen.name === 'result' && (
+        <ResultScreen
+          solvedBoard={screen.solvedBoard}
+          confirmedBoard={screen.confirmedBoard}
+          onRetry={() => setScreen({ name: 'home' })}
         />
       )}
     </>
