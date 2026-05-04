@@ -17,7 +17,7 @@ import type { Corners, ImageSize, Point } from '../grid/types';
 interface CornerPickerScreenProps {
   imageUri: string;
   onCancel: () => void;
-  onCropped: (result: CropResult) => void;
+  onCropped: (result: CropResult, corners: Corners, naturalSize: ImageSize) => void;
 }
 
 const HANDLE_HIT_SIZE = 44;
@@ -117,7 +117,7 @@ export function CornerPickerScreen({ imageUri, onCancel, onCropped }: CornerPick
         bottomLeft: toImage(corners.bottomLeft),
       };
       const result = await cropToBoundingRect(imageUri, imageCorners, naturalSize);
-      onCropped(result);
+      onCropped(result, imageCorners, naturalSize);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : '画像の補正に失敗しました';
       Alert.alert('エラー', message);

@@ -1,6 +1,6 @@
 # 開発進捗
 
-最終更新: 2026-05-04（Phase 6 完了）
+最終更新: 2026-05-04（Phase 7 進行中）
 
 ## サマリ
 
@@ -12,7 +12,7 @@
 | 4 | 盤面検出（手動4点指定） | ✅ 完了 | [phase-4-grid-detect.md](phases/phase-4-grid-detect.md) |
 | 5 | セル分割＋数字OCR | ✅ 完了（精度改善は Phase 7） | [phase-5-ocr.md](phases/phase-5-ocr.md) |
 | 6 | 結果画面と手動修正UI | ✅ 完了 | [phase-6-result-ui.md](phases/phase-6-result-ui.md) |
-| 7 | エラーハンドリング・実機テスト | ⚪ 未着手 | [phase-7-polish.md](phases/phase-7-polish.md) |
+| 7 | エラーハンドリング・実機テスト | 🟡 進行中 | [phase-7-polish.md](phases/phase-7-polish.md) |
 
 凡例: ✅ 完了 / 🟡 進行中 / ⚪ 未着手 / ⛔ 中断
 
@@ -94,14 +94,17 @@
 - [x] iOS Simulator 動作確認 OK
 - [x] Gitコミット（`55a406d`）
 
-## Phase 7: エラーハンドリング・実機テスト ⚪
+## Phase 7: エラーハンドリング・実機テスト 🟡
 
-- [ ] カメラ権限拒否時のフォールバック導線
-- [ ] OCR精度が低い場合のリカバリ
-- [ ] iOS実機テスト
-- [ ] Android実機 or エミュレータテスト
-- [ ] README作成（簡易ユーザ向けガイド）
-- [ ] Gitコミット
+- [x] OCR精度改善: `computeCellRectFromCorners` + `segmentBoardFromCorners`（双線形補間で透視歪み対応）
+- [x] 写真ライブラリ権限拒否時のフォールバック（設定を開く誘導）
+- [x] README.md 作成
+- [x] `npm test` 35件グリーン / `npx tsc --noEmit` グリーン
+- [ ] iOS実機テスト ← **ユーザー実施項目**
+- [ ] Android実機 or エミュレータテスト ← **ユーザー実施項目**
+- [ ] Gitコミット ← 承認待ち
+- [ ] Push ← 承認待ち
+- [ ] PR 作成 ← 承認待ち
 
 ## 更新方針
 

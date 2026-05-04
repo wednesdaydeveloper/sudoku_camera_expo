@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -9,10 +9,10 @@ import { CornerPickerScreen } from './src/screens/CornerPickerScreen';
 import { ProcessingScreen } from './src/screens/ProcessingScreen';
 import { ReviewScreen } from './src/screens/ReviewScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
-import { segmentBoard } from './src/ocr/segment';
+import { segmentBoardFromCorners } from './src/ocr/segment';
 import { recognizeBoard } from './src/ocr/recognize';
 import { solve } from './src/solver';
-import type { ImageSize } from './src/grid/types';
+import type { Corners, ImageSize } from './src/grid/types';
 import type { Board } from './src/solver/types';
 
 type Screen =
@@ -20,7 +20,7 @@ type Screen =
   | { name: 'camera' }
   | { name: 'preview'; imageUri: string }
   | { name: 'cornerPicker'; imageUri: string }
-  | { name: 'croppedPreview'; imageUri: string; imageSize: ImageSize }
+  | { name: 'croppedPreview'; imageUri: string; imageSize: ImageSize; originalImageUri: string; corners: Corners; naturalSize: ImageSize }
   | { name: 'processing'; message?: string }
   | { name: 'review'; board: Board }
   | { name: 'result'; solvedBoard: Board; confirmedBoard: Board };
@@ -29,6 +29,26 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'home' });
 
   const handlePickPhoto = async () => {
+    const { granted, canAskAgain } = await ImagePicker.getMediaLibraryPermissionsAsync();
+    if (!granted) {
+      if (canAskAgain) {
+        const { granted: newGranted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!newGranted) {
+          Alert.alert('アクセスが必要です', '写真ライブラリを利用するには設定から許可してください。');
+          return;
+        }
+      } else {
+        Alert.alert(
+          'アクセスが必要です',
+          '写真ライブラリを利用するには設定から許可してください。',
+          [
+            { text: '設定を開く', onPress: () => void Linking.openSettings() },
+            { text: 'キャンセル', style: 'cancel' },
+          ]
+        );
+        return;
+      }
+    }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
@@ -54,10 +74,14 @@ export default function App() {
     }
   };
 
-  const runOcrPipeline = async (imageUri: string, imageSize: ImageSize) => {
+  const runOcrPipeline = async (
+    originalImageUri: string,
+    corners: Corners,
+    naturalSize: ImageSize
+  ) => {
     setScreen({ name: 'processing', message: 'セルに分割しています…' });
     try {
-      const cellImages = await segmentBoard(imageUri, imageSize);
+      const cellImages = await segmentBoardFromCorners(originalImageUri, corners, naturalSize);
       setScreen({ name: 'processing', message: '数字を認識しています…' });
       const board = await recognizeBoard(cellImages);
       setScreen({ name: 'review', board });
@@ -100,11 +124,14 @@ export default function App() {
           onCancel={() =>
             setScreen({ name: 'preview', imageUri: screen.imageUri })
           }
-          onCropped={(result) =>
+          onCropped={(result, corners, naturalSize) =>
             setScreen({
               name: 'croppedPreview',
               imageUri: result.uri,
               imageSize: { width: result.width, height: result.height },
+              originalImageUri: screen.imageUri,
+              corners,
+              naturalSize,
             })
           }
         />
@@ -114,7 +141,7 @@ export default function App() {
           imageUri={screen.imageUri}
           onRetry={() => setScreen({ name: 'home' })}
           onProceed={() => {
-            void runOcrPipeline(screen.imageUri, screen.imageSize);
+            void runOcrPipeline(screen.originalImageUri, screen.corners, screen.naturalSize);
           }}
           note="補正後の盤面です。OCR で数字を読み取ります。"
           retryLabel="やり直す"
